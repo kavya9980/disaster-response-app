@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { Server } = from 'socket.io';
+import { Server } from 'socket.io'; // <--- CORRECTED THIS LINE!
 import http from 'http';
 
 dotenv.config(); // Load environment variables from .env
@@ -12,12 +12,11 @@ dotenv.config(); // Load environment variables from .env
 const app = express();
 const server = http.createServer(app); // Keep this for Socket.IO
 
-// The PORT variable itself is fine, but we will use process.env.PORT directly in server.listen
+// The PORT variable itself is fine, but we use process.env.PORT directly in server.listen
 // const PORT = process.env.PORT || 5000; 
 
-// Define your Vercel frontend URL for CORS - THIS IS THE CRUCIAL UPDATE!
-// Use the EXACT URL of your deployed Vercel frontend from your browser's address bar or Vercel dashboard.
-const VERCEL_FRONTEND_URL = 'https://disaster-response-n86abewty-kavya-ms-projects-f2b77050.vercel.app'; // <--- THIS HAS BEEN UPDATED
+// Define your Vercel frontend URL for CORS - This is based on your recent error logs
+const VERCEL_FRONTEND_URL = 'https://disaster-response-n86abewty-kavya-ms-projects-f2b77050.vercel.app'; // <--- Confirmed and updated URL
 
 // --- CORS Configuration for Express API Routes ---
 const expressCorsOptions = {
