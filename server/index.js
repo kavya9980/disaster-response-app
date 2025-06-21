@@ -53,10 +53,8 @@ const Incident = mongoose.model('Incident', incidentSchema);
 // Google Gemini API Configuration
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// *** FINAL MODEL CONFIGURATION ATTEMPT ***
-// Directly using "models/gemini-pro" as it's the most common and likely correct name.
-// The debugging listModels function has been removed.
-const model = genAI.getGenerativeModel({ model: "models/gemini-pro" });
+// *** FINAL MODEL CONFIGURATION - CHANGED TO "gemini-pro" (without "models/") ***
+const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
 
 async function extractLocation(text) {
@@ -81,7 +79,7 @@ async function extractLocation(text) {
         return textResponse;
     } catch (error) {
         console.error("Error extracting location with Gemini:", error.message);
-        // If this still fails, the error here will tell us if "models/gemini-pro" is incorrect or if it's an API key issue.
+        // This is where we will see the error if this new model name is also incorrect.
         return "Extraction Failed (See Server Logs)";
     }
 }
