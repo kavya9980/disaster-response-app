@@ -2,7 +2,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import cors from 'cors';
+import cors from 'cors'; // This is correct
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Server } from 'socket.io';
 import http from 'http';
@@ -10,18 +10,37 @@ import http from 'http';
 dotenv.config(); // Load environment variables from .env
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-    cors: {
-        origin: '*', // IMPORTANT: For production, change this to your frontend's actual URL (e.g., 'https://your-frontend-name.vercel.app')
-        methods: ['GET', 'POST']
-    }
-});
+const server = http.createServer(app); // Keep this for Socket.IO
+
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
+// Define your Vercel frontend URL for CORS
+const VERCEL_FRONTEND_URL = 'https://disaster-response-app-rust.vercel.app'; // <--- Your Vercel URL
+
+// --- CORS Configuration for Express API Routes ---
+// This needs to come before app.use(express.json()) and your API routes.
+const expressCorsOptions = {
+    origin: VERCEL_FRONTEND_URL, // Allow requests only from your Vercel frontend
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allow common HTTP methods
+    credentials: true, // Allow sending cookies/auth headers if needed
+    optionsSuccessStatus: 204 // For CORS preflight requests
+};
+app.use(cors(expressCorsOptions)); // Apply CORS to your Express app
+
+
+// Middleware for JSON parsing
 app.use(express.json());
+
+// --- Socket.IO Configuration ---
+// The cors configuration for Socket.IO goes directly into its constructor
+const io = new Server(server, {
+    cors: {
+        origin: VERCEL_FRONTEND_URL, // <--- Socket.IO CORS also uses your Vercel URL
+        methods: ['GET', 'POST'], // Methods allowed for Socket.IO (often just GET/POST for handshakes)
+        credentials: true
+    }
+});
+
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI) // useNewUrlParser and useUnifiedTopology are deprecated in Mongoose 6+
@@ -111,7 +130,7 @@ app.get('/', (req, res) => {
     res.send('Disaster Response Backend is running!');
 });
 
-// Start Server
+// Start Server - using 'server.listen' for Socket.IO integration
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
