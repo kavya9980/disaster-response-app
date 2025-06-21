@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { Server } => { // Corrected: Remove the extra arrow function here if it was added accidentally
+import { Server } from 'socket.io'; // <--- CORRECTED THIS LINE!
 import http from 'http';
 
 dotenv.config();
@@ -13,16 +13,16 @@ const app = express();
 const server = http.createServer(app);
 
 // Define your Vercel frontend URL for CORS - This is based on your recent error logs
-const VERCEL_FRONTEND_URL = 'https://disaster-response-app-rust.vercel.app'; // KEEP THIS AS IS, IT'S CORRECT FOR CORS
+const VERCEL_FRONTEND_URL = 'https://disaster-response-app-rust.vercel.app';
 
 // --- CORS Configuration for Express API Routes ---
 const expressCorsOptions = {
-    origin: VERCEL_FRONTEND_URL, // Allow requests only from your Vercel frontend
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allow common HTTP methods
-    credentials: true, // Allow sending cookies/auth headers if needed
-    optionsSuccessStatus: 204 // For CORS preflight requests
+    origin: VERCEL_FRONTEND_URL,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    optionsSuccessStatus: 204
 };
-app.use(cors(expressCorsOptions)); // Apply CORS to your Express app
+app.use(cors(expressCorsOptions));
 
 
 // Middleware for JSON parsing
@@ -31,8 +31,8 @@ app.use(express.json());
 // --- Socket.IO Configuration ---
 const io = new Server(server, {
     cors: {
-        origin: VERCEL_FRONTEND_URL, // Socket.IO CORS also uses your Vercel URL
-        methods: ['GET', 'POST'], // Methods allowed for Socket.IO (often just GET/POST for handshakes)
+        origin: VERCEL_FRONTEND_URL,
+        methods: ['GET', 'POST'],
         credentials: true
     }
 });
@@ -64,7 +64,7 @@ async function listAvailableGeminiModels() {
     }
     try {
         console.log("--- Attempting to list available Gemini models (DEBUG INFO) ---");
-        const { models } = await genAI.listModels(); // This is the line that caused "not a function"
+        const { models } = await genAI.listModels();
         console.log("Available Gemini Models and Supported Methods:");
         if (models.length === 0) {
             console.log("No models found. Check API key and project settings.");
@@ -146,7 +146,7 @@ app.post('/api/incidents', async (req, res) => {
 
         res.status(201).json(newIncident);
     } catch (err) {
-        console.error("Error saving incident:", err); // Added specific error logging for the incident save
+        console.error("Error saving incident:", err);
         res.status(500).json({ message: err.message });
     }
 });
