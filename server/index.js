@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { Server } from 'socket.io';
+import { Server } = from 'socket.io';
 import http from 'http';
 
 dotenv.config(); // Load environment variables from .env
@@ -12,13 +12,14 @@ dotenv.config(); // Load environment variables from .env
 const app = express();
 const server = http.createServer(app); // Keep this for Socket.IO
 
-const PORT = process.env.PORT || 5000; // This variable 'PORT' itself is fine
+// The PORT variable itself is fine, but we will use process.env.PORT directly in server.listen
+// const PORT = process.env.PORT || 5000; 
 
-// Define your Vercel frontend URL for CORS
-const VERCEL_FRONTEND_URL = 'https://disaster-response-app-rust.vercel.app'; // <--- Your Vercel URL
+// Define your Vercel frontend URL for CORS - THIS IS THE CRUCIAL UPDATE!
+// Use the EXACT URL of your deployed Vercel frontend from your browser's address bar or Vercel dashboard.
+const VERCEL_FRONTEND_URL = 'https://disaster-response-n86abewty-kavya-ms-projects-f2b77050.vercel.app'; // <--- THIS HAS BEEN UPDATED
 
 // --- CORS Configuration for Express API Routes ---
-// This needs to come before app.use(express.json()) and your API routes.
 const expressCorsOptions = {
     origin: VERCEL_FRONTEND_URL, // Allow requests only from your Vercel frontend
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allow common HTTP methods
@@ -32,10 +33,9 @@ app.use(cors(expressCorsOptions)); // Apply CORS to your Express app
 app.use(express.json());
 
 // --- Socket.IO Configuration ---
-// The cors configuration for Socket.IO goes directly into its constructor
 const io = new Server(server, {
     cors: {
-        origin: VERCEL_FRONTEND_URL, // <--- Socket.IO CORS also uses your Vercel URL
+        origin: VERCEL_FRONTEND_URL, // Socket.IO CORS also uses your Vercel URL
         methods: ['GET', 'POST'], // Methods allowed for Socket.IO (often just GET/POST for handshakes)
         credentials: true
     }
@@ -131,6 +131,6 @@ app.get('/', (req, res) => {
 });
 
 // Start Server - using 'server.listen' for Socket.IO integration
-server.listen(process.env.PORT, () => { // <--- THIS IS THE ONLY CHANGE from your provided code
+server.listen(process.env.PORT, () => {
     console.log(`Server running on port ${process.env.PORT}`);
 });
