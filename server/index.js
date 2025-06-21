@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { Server } from 'socket.io'; // <--- CORRECTED THIS LINE!
+import { Server } from 'socket.io';
 import http from 'http';
 
 dotenv.config();
@@ -12,7 +12,7 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-// Define your Vercel frontend URL for CORS - This is based on your recent error logs
+// Define your Vercel frontend URL for CORS
 const VERCEL_FRONTEND_URL = 'https://disaster-response-app-rust.vercel.app';
 
 // --- CORS Configuration for Express API Routes ---
@@ -23,7 +23,6 @@ const expressCorsOptions = {
     optionsSuccessStatus: 204
 };
 app.use(cors(expressCorsOptions));
-
 
 // Middleware for JSON parsing
 app.use(express.json());
@@ -36,7 +35,6 @@ const io = new Server(server, {
         credentials: true
     }
 });
-
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
@@ -55,43 +53,10 @@ const Incident = mongoose.model('Incident', incidentSchema);
 // Google Gemini API Configuration
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// *** IMPORTANT: TEMPORARY DEBUGGING CODE FOR GEMINI MODEL ISSUE ***
-// This function will list all models available to your API key
-async function listAvailableGeminiModels() {
-    if (!process.env.GEMINI_API_KEY) {
-        console.warn("GEMINI_API_KEY is not set. Cannot list Gemini models.");
-        return;
-    }
-    try {
-        console.log("--- Attempting to list available Gemini models (DEBUG INFO) ---");
-        const { models } = await genAI.listModels();
-        console.log("Available Gemini Models and Supported Methods:");
-        if (models.length === 0) {
-            console.log("No models found. Check API key and project settings.");
-        } else {
-            for (const model of models) {
-                console.log(`  Name: ${model.name}`);
-                console.log(`  Description: ${model.description || 'N/A'}`);
-                console.log(`  Input Token Limit: ${model.inputTokenLimit || 'N/A'}`);
-                console.log(`  Output Token Limit: ${model.outputTokenLimit || 'N/A'}`);
-                console.log(`  Supported Generation Methods: ${model.supportedGenerationMethods.join(', ')}`);
-                console.log('--------------------');
-            }
-        }
-        console.log("--- Finished listing models ---");
-    } catch (error) {
-        console.error("Error listing Gemini models (DEBUG INFO):", error.message);
-    }
-}
-
-// Call this function once when the server starts up
-listAvailableGeminiModels();
-// *** END TEMPORARY DEBUGGING CODE ***
-
-
-// The actual model you will use for content generation.
-// We will update this 'gemini-pro' string once you get the correct name from the logs.
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+// *** FINAL MODEL CONFIGURATION ATTEMPT ***
+// Directly using "models/gemini-pro" as it's the most common and likely correct name.
+// The debugging listModels function has been removed.
+const model = genAI.getGenerativeModel({ model: "models/gemini-pro" });
 
 
 async function extractLocation(text) {
@@ -116,6 +81,7 @@ async function extractLocation(text) {
         return textResponse;
     } catch (error) {
         console.error("Error extracting location with Gemini:", error.message);
+        // If this still fails, the error here will tell us if "models/gemini-pro" is incorrect or if it's an API key issue.
         return "Extraction Failed (See Server Logs)";
     }
 }
