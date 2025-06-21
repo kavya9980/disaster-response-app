@@ -4,49 +4,38 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { Server } from 'socket.io'; // <--- CORRECTED THIS LINE!
+import { Server } from 'socket.io';
 import http from 'http';
 
-dotenv.config(); // Load environment variables from .env
+dotenv.config();
 
 const app = express();
-const server = http.createServer(app); // Keep this for Socket.IO
+const server = http.createServer(app);
 
-// The PORT variable itself is fine, but we use process.env.PORT directly in server.listen
-// const PORT = process.env.PORT || 5000; 
+const VERCEL_FRONTEND_URL = 'https://disaster-response-app-rust.vercel.app'; // KEEP THIS AS IS, IT'S CORRECT FOR CORS
 
-// Define your Vercel frontend URL for CORS - This is based on your recent error logs
-const VERCEL_FRONTEND_URL = 'https://disaster-response-app-rust.vercel.app'; // <--- Confirmed and updated URL
-
-// --- CORS Configuration for Express API Routes ---
 const expressCorsOptions = {
-    origin: VERCEL_FRONTEND_URL, // Allow requests only from your Vercel frontend
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allow common HTTP methods
-    credentials: true, // Allow sending cookies/auth headers if needed
-    optionsSuccessStatus: 204 // For CORS preflight requests
+    origin: VERCEL_FRONTEND_URL,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    optionsSuccessStatus: 204
 };
-app.use(cors(expressCorsOptions)); // Apply CORS to your Express app
+app.use(cors(expressCorsOptions));
 
-
-// Middleware for JSON parsing
 app.use(express.json());
 
-// --- Socket.IO Configuration ---
 const io = new Server(server, {
     cors: {
-        origin: VERCEL_FRONTEND_URL, // Socket.IO CORS also uses your Vercel URL
-        methods: ['GET', 'POST'], // Methods allowed for Socket.IO (often just GET/POST for handshakes)
+        origin: VERCEL_FRONTEND_URL,
+        methods: ['GET', 'POST'],
         credentials: true
     }
 });
 
-
-// MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log('MongoDB connected successfully'))
 .catch(err => console.error('MongoDB connection error:', err));
 
-// Incident Schema and Model
 const incidentSchema = new mongoose.Schema({
     description: { type: String, required: true },
     extractedLocation: { type: String },
@@ -55,11 +44,47 @@ const incidentSchema = new mongoose.Schema({
 
 const Incident = mongoose.model('Incident', incidentSchema);
 
-// Google Gemini API Configuration
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" }); // Using gemini-pro for text
 
-// Helper function to extract location using Gemini
+// *** IMPORTANT: TEMPORARY DEBUGGING CODE FOR GEMINI MODEL ISSUE ***
+// This function will list all models available to your API key
+async function listAvailableGeminiModels() {
+    if (!process.env.GEMINI_API_KEY) {
+        console.warn("GEMINI_API_KEY is not set. Cannot list Gemini models.");
+        return;
+    }
+    try {
+        console.log("--- Attempting to list available Gemini models (DEBUG INFO) ---");
+        const { models } = await genAI.listModels();
+        console.log("Available Gemini Models and Supported Methods:");
+        if (models.length === 0) {
+            console.log("No models found. Check API key and project settings.");
+        } else {
+            for (const model of models) {
+                console.log(`  Name: ${model.name}`);
+                console.log(`  Description: ${model.description || 'N/A'}`);
+                console.log(`  Input Token Limit: ${model.inputTokenLimit || 'N/A'}`);
+                console.log(`  Output Token Limit: ${model.outputTokenLimit || 'N/A'}`);
+                console.log(`  Supported Generation Methods: ${model.supportedGenerationMethods.join(', ')}`);
+                console.log('--------------------');
+            }
+        }
+        console.log("--- Finished listing models ---");
+    } catch (error) {
+        console.error("Error listing Gemini models (DEBUG INFO):", error.message);
+    }
+}
+
+// Call this function once when the server starts up
+listAvailableGeminiModels();
+// *** END TEMPORARY DEBUGGING CODE ***
+
+
+// The actual model you will use for content generation.
+// We will update this 'gemini-pro' string once you get the correct name from the logs.
+const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+
 async function extractLocation(text) {
     if (!process.env.GEMINI_API_KEY) {
         console.warn("GEMINI_API_KEY is not set. Location extraction will be skipped.");
@@ -86,7 +111,6 @@ async function extractLocation(text) {
     }
 }
 
-// API Routes
 app.get('/api/incidents', async (req, res) => {
     try {
         const incidents = await Incident.find().sort({ timestamp: -1 });
@@ -107,16 +131,15 @@ app.post('/api/incidents', async (req, res) => {
         const newIncident = new Incident({ description, extractedLocation });
         await newIncident.save();
 
-        // Emit real-time update to all connected clients
         io.emit('newIncident', newIncident);
 
         res.status(201).json(newIncident);
     } catch (err) {
+        console.error("Error saving incident:", err); // Added specific error logging for the incident save
         res.status(500).json({ message: err.message });
     }
 });
 
-// Socket.IO connection handling
 io.on('connection', (socket) => {
     console.log(`A user connected: ${socket.id}`);
     socket.on('disconnect', () => {
@@ -124,12 +147,10 @@ io.on('connection', (socket) => {
     });
 });
 
-// Basic root route for health check or testing
 app.get('/', (req, res) => {
     res.send('Disaster Response Backend is running!');
 });
 
-// Start Server - using 'server.listen' for Socket.IO integration
 server.listen(process.env.PORT, () => {
     console.log(`Server running on port ${process.env.PORT}`);
 });
