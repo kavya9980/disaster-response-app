@@ -16,7 +16,7 @@ const server = http.createServer(app); // Keep this for Socket.IO
 // const PORT = process.env.PORT || 5000; 
 
 // Define your Vercel frontend URL for CORS - This is based on your recent error logs
-const VERCEL_FRONTEND_URL = 'https://disaster-response-n86abewty-kavya-ms-projects-f2b77050.vercel.app'; // <--- Confirmed and updated URL
+const VERCEL_FRONTEND_URL = 'https://disaster-response-app-rust.vercel.app'; // <--- Confirmed and updated URL
 
 // --- CORS Configuration for Express API Routes ---
 const expressCorsOptions = {
