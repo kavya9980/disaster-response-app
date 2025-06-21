@@ -2,7 +2,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import cors from 'cors'; // This is correct
+import cors from 'cors';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Server } from 'socket.io';
 import http from 'http';
@@ -12,7 +12,7 @@ dotenv.config(); // Load environment variables from .env
 const app = express();
 const server = http.createServer(app); // Keep this for Socket.IO
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000; // This variable 'PORT' itself is fine
 
 // Define your Vercel frontend URL for CORS
 const VERCEL_FRONTEND_URL = 'https://disaster-response-app-rust.vercel.app'; // <--- Your Vercel URL
@@ -43,7 +43,7 @@ const io = new Server(server, {
 
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGO_URI) // useNewUrlParser and useUnifiedTopology are deprecated in Mongoose 6+
+mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log('MongoDB connected successfully'))
 .catch(err => console.error('MongoDB connection error:', err));
 
@@ -131,6 +131,6 @@ app.get('/', (req, res) => {
 });
 
 // Start Server - using 'server.listen' for Socket.IO integration
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+server.listen(process.env.PORT, () => { // <--- THIS IS THE ONLY CHANGE from your provided code
+    console.log(`Server running on port ${process.env.PORT}`);
 });
